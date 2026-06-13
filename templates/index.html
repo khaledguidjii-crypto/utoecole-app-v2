@@ -14,7 +14,7 @@
         <img src="{{ c.photo_url or '/static/default.png' }}" width="60" height="60" style="border-radius:50%">
         <h3>{{ c.nom }}</h3>
         <p>{{ c.telephone }} | {{ c.phase }}</p>
-        <p>Reste à payer: {{ "%.2f"|format(c.tarif - c.versement) }} €</p>
+        <p>Reste à payer: {{ "%.2f"|format(c.tarif - c.versement) }} DA</p>
         <a href="/candidat/{{ c.id }}">Détails</a>
     </div>
     {% endfor %}
