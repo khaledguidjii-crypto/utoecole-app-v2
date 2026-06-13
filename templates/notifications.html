@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Notifications</h1>
-<ul>
+<h1><i class="fas fa-bell"></i> Notifications</h1>
+{% if notifications %}
     {% for n in notifications %}
-        <li>
-            {{ n.message }} - <small>{{ n.created_at[:19] }}</small>
-            {% if n.lien %}
-                <a href="{{ n.lien }}">Voir</a>
-            {% endif %}
-        </li>
+    <div class="notif-item">
+        <p><strong>{{ n.message }}</strong><br>
+        <small><i class="fas fa-clock"></i> {{ n.created_at[:19] }}</small>
+        {% if n.lien %}
+            <br><a href="{{ n.lien }}" class="btn-detail" style="margin-top: 0.5rem; display: inline-block;"><i class="fas fa-arrow-right"></i> Voir</a>
+        {% endif %}
+        </p>
+    </div>
     {% endfor %}
-</ul>
+{% else %}
+    <div class="card"><p>Aucune notification pour le moment.</p></div>
+{% endif %}
 {% endblock %}

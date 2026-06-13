@@ -1,20 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>{{ 'Modifier' if candidat else 'Ajouter un candidat' }}</h2>
-<form method="post" enctype="multipart/form-data">
-    <input type="text" name="nom" value="{{ candidat.nom if candidat else '' }}" placeholder="Nom complet" required><br>
-    <input type="tel" name="telephone" value="{{ candidat.telephone if candidat else '' }}" placeholder="Téléphone" required><br>
-    <select name="phase" required>
-        <option value="code" {% if candidat and candidat.phase=='code' %}selected{% endif %}>Code</option>
-        <option value="creneau" {% if candidat and candidat.phase=='creneau' %}selected{% endif %}>Créneau</option>
-        <option value="circuit" {% if candidat and candidat.phase=='circuit' %}selected{% endif %}>Circuit</option>
-    </select><br>
-    <input type="number" step="0.01" name="tarif" value="{{ candidat.tarif if candidat else '' }}" placeholder="Tarif total (DA)" required><br>
-    <input type="number" step="0.01" name="versement" value="{{ candidat.versement if candidat else '0' }}" placeholder="Versement effectué (DA)"><br>
-    {% if candidat and candidat.photo_url %}
-        <div><img src="{{ candidat.photo_url }}" width="100"></div>
-    {% endif %}
-    <input type="file" name="photo" accept="image/*" capture="environment"><br>
-    <button type="submit">Enregistrer</button>
-</form>
+<div class="card">
+    <h2>{{ 'Modifier' if candidat else 'Ajouter un candidat' }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label><i class="fas fa-user"></i> Nom complet</label>
+            <input type="text" name="nom" value="{{ candidat.nom if candidat else '' }}" placeholder="ex: Ahmed Benali" required>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-phone"></i> Téléphone</label>
+            <input type="tel" name="telephone" value="{{ candidat.telephone if candidat else '' }}" placeholder="ex: 0555 12 34 56" required>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-flag-checkered"></i> Phase</label>
+            <select name="phase" required>
+                <option value="code" {% if candidat and candidat.phase=='code' %}selected{% endif %}>Code</option>
+                <option value="creneau" {% if candidat and candidat.phase=='creneau' %}selected{% endif %}>Créneau</option>
+                <option value="circuit" {% if candidat and candidat.phase=='circuit' %}selected{% endif %}>Circuit</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-money-bill-wave"></i> Tarif total (DA)</label>
+            <input type="number" step="0.01" name="tarif" value="{{ candidat.tarif if candidat else '' }}" placeholder="ex: 25000" required>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-hand-holding-usd"></i> Versement initial (DA)</label>
+            <input type="number" step="0.01" name="versement" value="{{ candidat.versement if candidat else '0' }}" placeholder="ex: 5000">
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-camera"></i> Photo</label>
+            {% if candidat and candidat.photo_url %}
+                <div style="margin-bottom: 10px;"><img src="{{ candidat.photo_url }}" width="100" style="border-radius: 16px;"></div>
+            {% endif %}
+            <input type="file" name="photo" accept="image/*" capture="environment">
+        </div>
+        <button type="submit"><i class="fas fa-save"></i> {{ 'Modifier' if candidat else 'Ajouter' }}</button>
+    </form>
+</div>
 {% endblock %}

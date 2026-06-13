@@ -1,20 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Caisse</h1>
-<p><strong>Solde actuel :</strong> {{ solde }} DA</p>
-<a href="/add_mouvement">➕ Ajouter une dépense / retrait</a>
-<hr>
-<h2>Historique des transactions (100 dernières)</h2>
-<table border="1">
-    <tr><th>Date</th><th>Description</th><th>Montant (DA)</th><th>Employé</th><th>Type</th></tr>
-    {% for t in transactions %}
-    <tr>
-        <td>{{ t.date[:19] }}</td>
-        <td>{{ t.description }}</td>
-        <td style="color: {{ 'green' if t.montant > 0 else 'red' }}">{{ t.montant }}</td>
-        <td>{{ t.created_by }}</td>
-        <td>{{ t.type }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="card">
+    <h1><i class="fas fa-chart-line"></i> Caisse</h1>
+    <div class="solde">💰 Solde actuel : {{ solde }} DA</div>
+    <a href="/add_mouvement" class="btn-detail" style="background:#10b981; color:white; display:inline-block; margin-bottom:1rem;"><i class="fas fa-plus-circle"></i> Ajouter une dépense / retrait</a>
+    <div class="table-responsive">
+        <h2><i class="fas fa-history"></i> Historique des transactions</h2>
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Description</th><th>Montant (DA)</th><th>Employé</th><th>Type</th></tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.date[:19] }}</td>
+                    <td>{{ t.description }}</td>
+                    <td style="color: {{ 'green' if t.montant > 0 else 'red' }}">{{ t.montant }}</td>
+                    <td>{{ t.created_by }}</td>
+                    <td>{{ t.type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
