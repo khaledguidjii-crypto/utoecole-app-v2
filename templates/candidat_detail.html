@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-    <h2><i class="fas fa-id-card"></i> {{ c.nom }}</h2>
-    <p><i class="fas fa-phone"></i> <strong>Téléphone :</strong> {{ c.telephone }}</p>
-    <p><i class="fas fa-flag-checkered"></i> <strong>Phase :</strong> {{ c.phase|capitalize }}</p>
-    <p><i class="fas fa-tag"></i> <strong>Tarif total :</strong> {{ c.tarif }} DA</p>
-    <p><i class="fas fa-hand-holding-usd"></i> <strong>Versement effectué :</strong> {{ c.versement }} DA</p>
-    <p class="reste"><i class="fas fa-wallet"></i> <strong>Reste à payer :</strong> {{ "%.2f"|format(c.tarif - c.versement) }} DA</p>
-    <p><i class="fas fa-calendar-alt"></i> <strong>Inscription :</strong> {{ c.created_at[:10] if c.created_at else '' }}</p>
-    {% if c.photo_url %}
-        <div style="margin: 1rem 0;"><img src="{{ c.photo_url }}" width="150" style="border-radius: 20px;"></div>
-    {% endif %}
-    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-        <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
-        <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <img src="{{ c.photo_url or 'https://ui-avatars.com/api/?background=4361ee&color=fff&name=' + c.nom|urlencode }}" alt="Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+        <h2 style="margin:0;">{{ c.nom }}</h2>
+    </div>
+    <div style="margin-top: 1rem;">
+        <p><i class="fas fa-phone-alt"></i> <strong>{{ c.telephone }}</strong></p>
+        <p><i class="fas fa-flag-checkered"></i> Phase : {{ c.phase|capitalize }}</p>
+        <p><i class="fas fa-tag"></i> Tarif : {{ c.tarif }} DA</p>
+        <p><i class="fas fa-hand-holding-usd"></i> Versé : {{ c.versement }} DA</p>
+        <p class="reste"><i class="fas fa-wallet"></i> Reste à payer : {{ "%.0f"|format(c.tarif - c.versement) }} DA</p>
+        <p><i class="fas fa-calendar"></i> Inscrit le : {{ c.created_at[:10] }}</p>
+    </div>
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+        <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#4361ee;"><i class="fas fa-edit"></i> Modifier</a>
+        <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef476f;" onclick="return confirm('Supprimer ?')"><i class="fas fa-trash"></i> Supprimer</a>
     </div>
 </div>
 {% endblock %}

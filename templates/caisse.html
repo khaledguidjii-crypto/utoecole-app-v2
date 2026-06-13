@@ -2,26 +2,33 @@
 {% block content %}
 <div class="card">
     <h1><i class="fas fa-chart-line"></i> Caisse</h1>
-    <div class="solde">💰 Solde actuel : {{ solde }} DA</div>
-    <a href="/add_mouvement" class="btn-detail" style="background:#10b981; color:white; display:inline-block; margin-bottom:1rem;"><i class="fas fa-plus-circle"></i> Ajouter une dépense / retrait</a>
+    <div class="solde" id="soldeAnim">💰 {{ solde }} DA</div>
+    <a href="/add_mouvement" class="btn-detail" style="background:#10b981; display:inline-flex; gap:8px; margin-bottom:1rem;"><i class="fas fa-plus-circle"></i> Nouvelle dépense</a>
     <div class="table-responsive">
-        <h2><i class="fas fa-history"></i> Historique des transactions</h2>
+        <h2><i class="fas fa-history"></i> Historique</h2>
         <table>
             <thead>
-                <tr><th>Date</th><th>Description</th><th>Montant (DA)</th><th>Employé</th><th>Type</th></tr>
+                <tr><th>Date</th><th>Description</th><th>Montant</th><th>Employé</th></tr>
             </thead>
             <tbody>
                 {% for t in transactions %}
                 <tr>
-                    <td>{{ t.date[:19] }}</td>
-                    <td>{{ t.description }}</td>
-                    <td style="color: {{ 'green' if t.montant > 0 else 'red' }}">{{ t.montant }}</td>
+                    <td>{{ t.date[:16] }}</td>
+                    <td>{{ t.description[:30] }}</td>
+                    <td style="color: {{ 'green' if t.montant > 0 else 'red' }}">{{ t.montant }} DA</td>
                     <td>{{ t.created_by }}</td>
-                    <td>{{ t.type }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<script>
+    // Animation du solde
+    let soldeElem = document.getElementById('soldeAnim');
+    if(soldeElem) {
+        soldeElem.style.transform = 'scale(1.05)';
+        setTimeout(() => { soldeElem.style.transform = 'scale(1)'; }, 300);
+    }
+</script>
 {% endblock %}

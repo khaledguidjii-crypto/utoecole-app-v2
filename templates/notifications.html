@@ -4,15 +4,14 @@
 {% if notifications %}
     {% for n in notifications %}
     <div class="notif-item">
-        <p><strong>{{ n.message }}</strong><br>
+        <p><i class="fas fa-info-circle"></i> {{ n.message }}</p>
         <small><i class="fas fa-clock"></i> {{ n.created_at[:19] }}</small>
         {% if n.lien %}
-            <br><a href="{{ n.lien }}" class="btn-detail" style="margin-top: 0.5rem; display: inline-block;"><i class="fas fa-arrow-right"></i> Voir</a>
+            <br><a href="{{ n.lien }}" class="btn-detail" style="margin-top: 8px; display: inline-block;">Voir <i class="fas fa-arrow-right"></i></a>
         {% endif %}
-        </p>
     </div>
     {% endfor %}
 {% else %}
-    <div class="card"><p>Aucune notification pour le moment.</p></div>
+    <div class="card"><p><i class="fas fa-check-circle"></i> Aucune nouvelle notification</p></div>
 {% endif %}
 {% endblock %}

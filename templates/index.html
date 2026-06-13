@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<h1><i class="fas fa-users"></i> Candidats</h1>
-<input type="text" id="search" placeholder="🔍 Rechercher par nom ou téléphone..." onkeyup="filterCandidats()">
+<div style="margin-bottom: 1rem;">
+    <h1><i class="fas fa-users"></i> Candidats</h1>
+</div>
+<input type="text" id="search" placeholder="🔍 Nom ou téléphone..." onkeyup="filterCandidats()">
 <div class="filters">
     <button onclick="filterPhase('tous')">Tous</button>
-    <button onclick="filterPhase('code')">Code</button>
-    <button onclick="filterPhase('creneau')">Créneau</button>
-    <button onclick="filterPhase('circuit')">Circuit</button>
+    <button onclick="filterPhase('code')">📖 Code</button>
+    <button onclick="filterPhase('creneau')">⏱️ Créneau</button>
+    <button onclick="filterPhase('circuit')">🛣️ Circuit</button>
 </div>
 <div class="candidat-grid" id="candidatsList">
     {% for c in candidats %}
     <div class="candidat-card" data-phase="{{ c.phase }}" data-nom="{{ c.nom|lower }}" data-tel="{{ c.telephone }}">
-        <img src="{{ c.photo_url or 'https://via.placeholder.com/150?text=Photo' }}" alt="Photo">
+        <img src="{{ c.photo_url or 'https://ui-avatars.com/api/?background=4361ee&color=fff&name=' + c.nom|urlencode }}" alt="Photo">
         <div class="candidat-info">
             <h3>{{ c.nom }}</h3>
-            <p><i class="fas fa-phone"></i> {{ c.telephone }}</p>
+            <p><i class="fas fa-phone-alt"></i> {{ c.telephone }}</p>
             <p><i class="fas fa-tag"></i> {{ c.phase|capitalize }}</p>
-            <p class="reste"><i class="fas fa-wallet"></i> Reste à payer : {{ "%.2f"|format(c.tarif - c.versement) }} DA</p>
-            <a href="/candidat/{{ c.id }}" class="btn-detail"><i class="fas fa-eye"></i> Détails</a>
+            <p class="reste"><i class="fas fa-coins"></i> Reste: {{ "%.0f"|format(c.tarif - c.versement) }} DA</p>
+            <a href="/candidat/{{ c.id }}" class="btn-detail"><i class="fas fa-arrow-right"></i> Voir</a>
         </div>
     </div>
     {% endfor %}
@@ -27,7 +29,7 @@ function filterPhase(phase) {
     let cards = document.querySelectorAll('.candidat-card');
     cards.forEach(card => {
         if(phase === 'tous' || card.dataset.phase === phase)
-            card.style.display = 'block';
+            card.style.display = 'flex';
         else
             card.style.display = 'none';
     });
@@ -39,7 +41,7 @@ function filterCandidats() {
         let nom = card.dataset.nom;
         let tel = card.dataset.tel;
         if(nom.includes(search) || tel.includes(search))
-            card.style.display = 'block';
+            card.style.display = 'flex';
         else
             card.style.display = 'none';
     });
