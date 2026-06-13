@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,8 +9,7 @@
 <body>
     <nav>
         <a href="/">Accueil</a> |
-        <a href="/add">Ajouter candidat</a> |
-        <a href="/logout">Déconnexion</a>
+        <a href="/add">Ajouter candidat</a>
     </nav>
     <div class="container">
         {% with messages = get_flashed_messages() %}
@@ -26,33 +24,4 @@
         {% block content %}{% endblock %}
     </div>
 </body>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
-    <title>Auto École Manager</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <nav>
-        <a href="/">Accueil</a> |
-        <a href="/add">Ajouter candidat</a> |
-        <a href="/logout">Déconnexion</a>
-    </nav>
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <ul class="flash">
-            {% for msg in messages %}
-              <li>{{ msg }}</li>
-            {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </div>
-</body>
->>>>>>> 8509799 (Premier déploiement auto ecole)
 </html>
