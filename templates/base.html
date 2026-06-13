@@ -9,7 +9,11 @@
 <body>
     <nav>
         <a href="/">Accueil</a> |
-        <a href="/add">Ajouter candidat</a>
+        <a href="/add">Ajouter candidat</a> |
+        <a href="/caisse">Caisse</a> |
+        <a href="/notifications" id="notif-link">
+            🔔 <span id="notif-badge" style="background:red; color:white; border-radius:50%; padding:2px 6px; font-size:12px; display:none;">0</span>
+        </a>
     </nav>
     <div class="container">
         {% with messages = get_flashed_messages() %}
@@ -23,5 +27,25 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        function updateNotifCount() {
+            fetch('/api/notifications/count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('notif-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Erreur chargement notifications', err));
+        }
+        // Mise à jour initiale et toutes les 30 secondes
+        updateNotifCount();
+        setInterval(updateNotifCount, 30000);
+    </script>
 </body>
 </html>

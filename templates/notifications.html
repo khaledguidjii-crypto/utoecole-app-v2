@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Notifications</h1>
+<ul>
+    {% for n in notifications %}
+        <li>
+            {{ n.message }} - <small>{{ n.created_at[:19] }}</small>
+            {% if n.lien %}
+                <a href="{{ n.lien }}">Voir</a>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

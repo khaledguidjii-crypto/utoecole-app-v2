@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Caisse</h1>
+<p><strong>Solde actuel :</strong> {{ solde }} DA</p>
+<a href="/add_mouvement">➕ Ajouter une dépense / retrait</a>
+<hr>
+<h2>Historique des transactions (100 dernières)</h2>
+<table border="1">
+    <tr><th>Date</th><th>Description</th><th>Montant (DA)</th><th>Employé</th><th>Type</th></tr>
+    {% for t in transactions %}
+    <tr>
+        <td>{{ t.date[:19] }}</td>
+        <td>{{ t.description }}</td>
+        <td style="color: {{ 'green' if t.montant > 0 else 'red' }}">{{ t.montant }}</td>
+        <td>{{ t.created_by }}</td>
+        <td>{{ t.type }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
