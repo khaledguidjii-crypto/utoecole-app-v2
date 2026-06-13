@@ -1,0 +1,20 @@
+<<<<<<< HEAD
+body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+nav { background: #2c3e50; color: white; padding: 1rem; }
+nav a { color: white; margin-right: 1rem; text-decoration: none; }
+.container { max-width: 1200px; margin: 2rem auto; padding: 1rem; }
+.candidat-card { background: white; border-radius: 12px; padding: 1rem; margin: 1rem; display: inline-block; width: 260px; vertical-align: top; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.flash { background: #f1c40f; padding: 0.5rem; list-style: none; }
+input, select, button { margin: 0.5rem 0; padding: 0.5rem; width: 100%; max-width: 300px; }
+button { background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; }
+=======
+body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+nav { background: #2c3e50; color: white; padding: 1rem; }
+nav a { color: white; margin-right: 1rem; text-decoration: none; }
+.container { max-width: 1200px; margin: 2rem auto; padding: 1rem; }
+.candidat-card { background: white; border-radius: 12px; padding: 1rem; margin: 1rem; display: inline-block; width: 260px; vertical-align: top; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.flash { background: #f1c40f; padding: 0.5rem; list-style: none; }
+input, select, button { margin: 0.5rem 0; padding: 0.5rem; width: 100%; max-width: 300px; }
+button { background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; }
+>>>>>>> 8509799 (Premier déploiement auto ecole)
+.filters button { width: auto; margin: 0 0.25rem; }

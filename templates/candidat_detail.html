@@ -1,0 +1,28 @@
+<<<<<<< HEAD
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ c.nom }}</h2>
+<p><strong>Téléphone:</strong> {{ c.telephone }}</p>
+<p><strong>Phase:</strong> {{ c.phase }}</p>
+<p><strong>Tarif total:</strong> {{ c.tarif }} €</p>
+<p><strong>Versement effectué:</strong> {{ c.versement }} €</p>
+<p><strong>Reste à payer:</strong> {{ "%.2f"|format(c.tarif - c.versement) }} €</p>
+<p><strong>Date d'inscription:</strong> {{ c.created_at[:10] if c.created_at else '' }}</p>
+<img src="{{ c.photo_url }}" width="150"><br><br>
+<a href="/edit/{{ c.id }}">Modifier</a> | 
+<a href="/delete/{{ c.id }}" onclick="return confirm('Supprimer définitivement ?')">Supprimer</a>
+=======
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ c.nom }}</h2>
+<p><strong>Téléphone:</strong> {{ c.telephone }}</p>
+<p><strong>Phase:</strong> {{ c.phase }}</p>
+<p><strong>Tarif total:</strong> {{ c.tarif }} €</p>
+<p><strong>Versement effectué:</strong> {{ c.versement }} €</p>
+<p><strong>Reste à payer:</strong> {{ "%.2f"|format(c.tarif - c.versement) }} €</p>
+<p><strong>Date d'inscription:</strong> {{ c.created_at[:10] if c.created_at else '' }}</p>
+<img src="{{ c.photo_url }}" width="150"><br><br>
+<a href="/edit/{{ c.id }}">Modifier</a> | 
+<a href="/delete/{{ c.id }}" onclick="return confirm('Supprimer définitivement ?')">Supprimer</a>
+>>>>>>> 8509799 (Premier déploiement auto ecole)
+{% endblock %}

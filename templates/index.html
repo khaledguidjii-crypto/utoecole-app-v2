@@ -1,0 +1,96 @@
+<<<<<<< HEAD
+{% extends "base.html" %}
+{% block content %}
+<h1>Liste des candidats</h1>
+<input type="text" id="search" placeholder="Rechercher par nom ou téléphone..." onkeyup="filterCandidats()">
+<div class="filters">
+    <button onclick="filterPhase('tous')">Tous</button>
+    <button onclick="filterPhase('code')">Code</button>
+    <button onclick="filterPhase('creneau')">Créneau</button>
+    <button onclick="filterPhase('circuit')">Circuit</button>
+</div>
+<div id="candidatsList">
+    {% for c in candidats %}
+    <div class="candidat-card" data-phase="{{ c.phase }}" data-nom="{{ c.nom|lower }}" data-tel="{{ c.telephone }}">
+        <img src="{{ c.photo_url or '/static/default.png' }}" width="60" height="60" style="border-radius:50%">
+        <h3>{{ c.nom }}</h3>
+        <p>{{ c.telephone }} | {{ c.phase }}</p>
+        <p>Reste à payer: {{ "%.2f"|format(c.tarif - c.versement) }} €</p>
+        <a href="/candidat/{{ c.id }}">Détails</a>
+    </div>
+    {% endfor %}
+</div>
+<script>
+function filterPhase(phase) {
+    let cards = document.querySelectorAll('.candidat-card');
+    cards.forEach(card => {
+        if(phase === 'tous' || card.dataset.phase === phase) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+function filterCandidats() {
+    let search = document.getElementById('search').value.toLowerCase();
+    let cards = document.querySelectorAll('.candidat-card');
+    cards.forEach(card => {
+        let nom = card.dataset.nom;
+        let tel = card.dataset.tel;
+        if(nom.includes(search) || tel.includes(search)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+=======
+{% extends "base.html" %}
+{% block content %}
+<h1>Liste des candidats</h1>
+<input type="text" id="search" placeholder="Rechercher par nom ou téléphone..." onkeyup="filterCandidats()">
+<div class="filters">
+    <button onclick="filterPhase('tous')">Tous</button>
+    <button onclick="filterPhase('code')">Code</button>
+    <button onclick="filterPhase('creneau')">Créneau</button>
+    <button onclick="filterPhase('circuit')">Circuit</button>
+</div>
+<div id="candidatsList">
+    {% for c in candidats %}
+    <div class="candidat-card" data-phase="{{ c.phase }}" data-nom="{{ c.nom|lower }}" data-tel="{{ c.telephone }}">
+        <img src="{{ c.photo_url or '/static/default.png' }}" width="60" height="60" style="border-radius:50%">
+        <h3>{{ c.nom }}</h3>
+        <p>{{ c.telephone }} | {{ c.phase }}</p>
+        <p>Reste à payer: {{ "%.2f"|format(c.tarif - c.versement) }} €</p>
+        <a href="/candidat/{{ c.id }}">Détails</a>
+    </div>
+    {% endfor %}
+</div>
+<script>
+function filterPhase(phase) {
+    let cards = document.querySelectorAll('.candidat-card');
+    cards.forEach(card => {
+        if(phase === 'tous' || card.dataset.phase === phase) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+function filterCandidats() {
+    let search = document.getElementById('search').value.toLowerCase();
+    let cards = document.querySelectorAll('.candidat-card');
+    cards.forEach(card => {
+        let nom = card.dataset.nom;
+        let tel = card.dataset.tel;
+        if(nom.includes(search) || tel.includes(search)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+>>>>>>> 8509799 (Premier déploiement auto ecole)
+{% endblock %}

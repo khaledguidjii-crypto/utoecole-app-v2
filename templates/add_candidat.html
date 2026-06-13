@@ -1,0 +1,42 @@
+<<<<<<< HEAD
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Modifier' if candidat else 'Ajouter un candidat' }}</h2>
+<form method="post" enctype="multipart/form-data">
+    <input type="text" name="nom" value="{{ candidat.nom if candidat else '' }}" placeholder="Nom complet" required><br>
+    <input type="tel" name="telephone" value="{{ candidat.telephone if candidat else '' }}" placeholder="Téléphone" required><br>
+    <select name="phase" required>
+        <option value="code" {% if candidat and candidat.phase=='code' %}selected{% endif %}>Code</option>
+        <option value="creneau" {% if candidat and candidat.phase=='creneau' %}selected{% endif %}>Créneau</option>
+        <option value="circuit" {% if candidat and candidat.phase=='circuit' %}selected{% endif %}>Circuit</option>
+    </select><br>
+    <input type="number" step="0.01" name="tarif" value="{{ candidat.tarif if candidat else '' }}" placeholder="Tarif total (€)" required><br>
+    <input type="number" step="0.01" name="versement" value="{{ candidat.versement if candidat else '0' }}" placeholder="Versement effectué (€)"><br>
+    {% if candidat and candidat.photo_url %}
+        <div><img src="{{ candidat.photo_url }}" width="100"></div>
+    {% endif %}
+    <input type="file" name="photo" accept="image/*" capture="environment"><br>
+    <button type="submit">Enregistrer</button>
+</form>
+=======
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Modifier' if candidat else 'Ajouter un candidat' }}</h2>
+<form method="post" enctype="multipart/form-data">
+    <input type="text" name="nom" value="{{ candidat.nom if candidat else '' }}" placeholder="Nom complet" required><br>
+    <input type="tel" name="telephone" value="{{ candidat.telephone if candidat else '' }}" placeholder="Téléphone" required><br>
+    <select name="phase" required>
+        <option value="code" {% if candidat and candidat.phase=='code' %}selected{% endif %}>Code</option>
+        <option value="creneau" {% if candidat and candidat.phase=='creneau' %}selected{% endif %}>Créneau</option>
+        <option value="circuit" {% if candidat and candidat.phase=='circuit' %}selected{% endif %}>Circuit</option>
+    </select><br>
+    <input type="number" step="0.01" name="tarif" value="{{ candidat.tarif if candidat else '' }}" placeholder="Tarif total (€)" required><br>
+    <input type="number" step="0.01" name="versement" value="{{ candidat.versement if candidat else '0' }}" placeholder="Versement effectué (€)"><br>
+    {% if candidat and candidat.photo_url %}
+        <div><img src="{{ candidat.photo_url }}" width="100"></div>
+    {% endif %}
+    <input type="file" name="photo" accept="image/*" capture="environment"><br>
+    <button type="submit">Enregistrer</button>
+</form>
+>>>>>>> 8509799 (Premier déploiement auto ecole)
+{% endblock %}
