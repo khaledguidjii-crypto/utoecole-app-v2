@@ -7,7 +7,7 @@ from supabase import create_client
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Variables d'environnement (configurées sur Render)
+# Configuration Supabase (variables d'environnement)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
 
@@ -18,7 +18,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
 
 # ---------- Fonctions utilitaires ----------
 def add_notification(message, type_notif, lien=None):
-    """Ajoute une notification dans la table."""
     supabase.table("notifications").insert({
         "message": message,
         "type": type_notif,
@@ -27,11 +26,9 @@ def add_notification(message, type_notif, lien=None):
     }).execute()
 
 def update_solde(montant, description, type_transaction, candidat_id=None, employe="systeme"):
-    """Met à jour le solde de la caisse et enregistre la transaction."""
-    # Récupérer la ligne unique de caisse
+    # Récupérer l'id et le solde actuel de la caisse
     caisse_rows = supabase.table("caisse").select("id, solde").execute().data
     if not caisse_rows:
-        # Créer une ligne de caisse avec solde 0
         new_row = supabase.table("caisse").insert({"solde": 0}).execute().data
         caisse_id = new_row[0]["id"]
         solde_actuel = 0
@@ -40,7 +37,8 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         solde_actuel = caisse_rows[0]["solde"]
     
     nouveau_solde = solde_actuel + montant
-    # Mise à jour avec WHERE sur l'id (obligatoire pour éviter l'erreur)
+    
+    # Mise à jour avec clause WHERE
     supabase.table("caisse").update({
         "solde": nouveau_solde,
         "updated_at": datetime.now().isoformat()
@@ -55,7 +53,7 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         "created_by": employe
     }).execute()
     
-    # Notification si sortie d'argent (montant négatif)
+    # Notification pour une sortie d'argent
     if montant < 0:
         add_notification(
             message=f"{employe} a retiré {abs(montant)} DA : {description}",
@@ -64,7 +62,7 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         )
     return nouveau_solde
 
-# ---------- Fonctions candidats ----------
+# ---------- Routes de gestion des candidats ----------
 def get_all_candidats():
     return supabase.table("candidats").select("*").order("created_at", desc=True).execute().data
 
@@ -72,7 +70,6 @@ def get_candidat_by_id(candidat_id):
     res = supabase.table("candidats").select("*").eq("id", candidat_id).execute()
     return res.data[0] if res.data else None
 
-# ---------- Routes ----------
 @app.route("/")
 def index():
     candidats = get_all_candidats()
@@ -88,7 +85,6 @@ def add_candidat():
         versement = float(request.form["versement"])
         photo_url = None
 
-        # Gestion de la photo
         if "photo" in request.files:
             file = request.files["photo"]
             if file and file.filename:
@@ -96,7 +92,7 @@ def add_candidat():
                 filename = f"{uuid.uuid4()}.{ext}"
                 file_bytes = file.read()
                 if len(file_bytes) > 5_000_000:
-                    flash("La photo ne doit pas dépasser 5 Mo.")
+                    flash("Photo trop grande (max 5 Mo)")
                     return redirect(url_for("add_candidat"))
                 supabase.storage.from_("photos_candidats").upload(
                     filename, file_bytes, {"content-type": file.mimetype or "image/jpeg"}
@@ -114,13 +110,12 @@ def add_candidat():
         result = supabase.table("candidats").insert(data).execute()
         candidat_id = result.data[0]["id"]
 
-        # Notification nouveau candidat
+        # Notification et mise à jour caisse
         add_notification(
             message=f"Nouveau candidat : {nom} (tél. {telephone})",
             type_notif="candidat",
             lien=f"/candidat/{candidat_id}"
         )
-        # Enregistrer le versement initial dans la caisse
         if versement > 0:
             update_solde(
                 montant=versement,
@@ -129,7 +124,7 @@ def add_candidat():
                 candidat_id=candidat_id,
                 employe="systeme"
             )
-        flash("Candidat ajouté avec succès")
+        flash("Candidat ajouté")
         return redirect(url_for("index"))
     return render_template("add_candidat.html")
 
@@ -145,9 +140,8 @@ def candidat_detail(candidat_id):
 def edit_candidat(candidat_id):
     candidat = get_candidat_by_id(candidat_id)
     if not candidat:
-        flash("Candidat introuvable")
+        flash("Introuvable")
         return redirect(url_for("index"))
-
     if request.method == "POST":
         nom = request.form["nom"]
         telephone = request.form["telephone"]
@@ -156,7 +150,6 @@ def edit_candidat(candidat_id):
         versement = float(request.form["versement"])
         photo_url = candidat["photo_url"]
 
-        # Gestion de la nouvelle photo
         if "photo" in request.files:
             file = request.files["photo"]
             if file and file.filename:
@@ -164,14 +157,14 @@ def edit_candidat(candidat_id):
                 filename = f"{uuid.uuid4()}.{ext}"
                 file_bytes = file.read()
                 if len(file_bytes) > 5_000_000:
-                    flash("La photo ne doit pas dépasser 5 Mo.")
+                    flash("Photo trop grande (max 5 Mo)")
                     return redirect(url_for("edit_candidat", candidat_id=candidat_id))
                 supabase.storage.from_("photos_candidats").upload(
                     filename, file_bytes, {"content-type": file.mimetype or "image/jpeg"}
                 )
                 photo_url = supabase.storage.from_("photos_candidats").get_public_url(filename)
 
-        # Ajustement de la caisse si le versement a changé
+        # Ajustement du solde si le versement change
         ancien_versement = candidat["versement"]
         if versement != ancien_versement:
             difference = versement - ancien_versement
@@ -193,34 +186,33 @@ def edit_candidat(candidat_id):
             "updated_at": datetime.now().isoformat()
         }).eq("id", candidat_id).execute()
 
-        flash("Candidat modifié avec succès")
+        flash("Candidat modifié")
         return redirect(url_for("candidat_detail", candidat_id=candidat_id))
     return render_template("add_candidat.html", candidat=candidat)
 
 @app.route("/delete/<candidat_id>")
 def delete_candidat(candidat_id):
-    # Option : on pourrait aussi annuler les transactions liées, mais on simplifie
     supabase.table("candidats").delete().eq("id", candidat_id).execute()
     flash("Candidat supprimé")
     return redirect(url_for("index"))
 
-# ---------- Routes pour la caisse et les notifications ----------
+# ---------- Routes pour les notifications ----------
 @app.route("/api/notifications/count")
 def notifications_count():
     result = supabase.table("notifications").select("id", count="exact").eq("lu", False).execute()
-    return {"count": result.count}
+    return jsonify({"count": result.count})
 
 @app.route("/notifications")
 def notifications_list():
     notifs = supabase.table("notifications").select("*").order("created_at", desc=True).execute().data
-    # Marquer toutes comme lues
     supabase.table("notifications").update({"lu": True}).eq("lu", False).execute()
     return render_template("notifications.html", notifications=notifs)
 
+# ---------- Routes pour la caisse ----------
 @app.route("/caisse")
 def caisse():
-    solde_row = supabase.table("caisse").select("solde").execute().data
-    solde = solde_row[0]["solde"] if solde_row else 0
+    caisse_row = supabase.table("caisse").select("solde").execute().data
+    solde = caisse_row[0]["solde"] if caisse_row else 0
     transactions = supabase.table("transactions").select("*").order("date", desc=True).limit(100).execute().data
     return render_template("caisse.html", solde=solde, transactions=transactions)
 
@@ -228,14 +220,13 @@ def caisse():
 def add_mouvement():
     if request.method == "POST":
         description = request.form["description"]
-        montant = -abs(float(request.form["montant"]))  # toujours négatif (sortie)
+        montant = -abs(float(request.form["montant"]))
         employe = request.form["employe"]
         update_solde(montant, description, "depense", employe=employe)
         flash("Mouvement enregistré")
         return redirect(url_for("caisse"))
     return render_template("mouvement_form.html")
 
-# ---------- Lancement ----------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

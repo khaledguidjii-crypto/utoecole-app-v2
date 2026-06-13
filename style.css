@@ -1,0 +1,169 @@
+/* Reset & base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+    padding: 20px;
+}
+
+/* Navigation */
+nav {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+nav a:hover {
+    background: rgba(255,255,255,0.2);
+}
+#notif-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+#notif-badge {
+    background: #e74c3c;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Cartes candidats */
+.candidat-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 1.2rem;
+    margin: 1rem;
+    display: inline-block;
+    width: 280px;
+    vertical-align: top;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e9ecef;
+}
+.candidat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.candidat-card img {
+    border-radius: 50%;
+    object-fit: cover;
+    width: 80px;
+    height: 80px;
+    border: 3px solid #2a5298;
+}
+.candidat-card h3 {
+    margin: 10px 0 5px;
+    color: #1e3c72;
+}
+.candidat-card p {
+    margin: 5px 0;
+    color: #555;
+}
+.candidat-card a {
+    display: inline-block;
+    margin-top: 8px;
+    background: #2a5298;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+.candidat-card a:hover {
+    background: #1e3c72;
+}
+
+/* Filtres */
+.filters {
+    margin-bottom: 20px;
+}
+.filters button {
+    background: #e9ecef;
+    border: none;
+    padding: 8px 16px;
+    margin-right: 8px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.filters button:hover {
+    background: #2a5298;
+    color: white;
+}
+
+/* Formulaires */
+input, select, button {
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 100%;
+    max-width: 400px;
+    font-size: 1rem;
+}
+button {
+    background: #2a5298;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+button:hover {
+    background: #1e3c72;
+}
+
+/* Tableaux */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+th {
+    background: #f8f9fa;
+    color: #1e3c72;
+}
+
+/* Messages flash */
+.flash {
+    background: #f39c12;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    list-style: none;
+    margin-bottom: 20px;
+}
+.flash li {
+    margin: 5px 0;
+}
