@@ -7,7 +7,6 @@ from supabase import create_client
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Variables d'environnement
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
 
@@ -18,7 +17,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
 
 # ---------- Fonctions utilitaires ----------
 def get_current_user():
-    """Retourne l'utilisateur connecté depuis la session"""
     return session.get("user")
 
 def is_admin():
@@ -33,6 +31,18 @@ def add_notification(message, type_notif, lien=None):
         "lu": False
     }).execute()
 
+def log_action(action, details, candidat_id=None, montant=None):
+    """Enregistre chaque action dans la table audit_log (admin seulement pour consultation)"""
+    user = get_current_user()
+    if user:
+        supabase.table("audit_log").insert({
+            "action": action,
+            "details": details,
+            "candidat_id": candidat_id,
+            "montant": montant,
+            "user_email": user["email"]
+        }).execute()
+
 def update_solde(montant, description, type_transaction, candidat_id=None, employe="systeme"):
     caisse_rows = supabase.table("caisse").select("id, solde").execute().data
     if not caisse_rows:
@@ -44,7 +54,6 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         solde_actuel = caisse_rows[0]["solde"]
     
     nouveau_solde = solde_actuel + montant
-    
     supabase.table("caisse").update({
         "solde": nouveau_solde,
         "updated_at": datetime.now().isoformat()
@@ -92,7 +101,7 @@ def logout():
     flash("Déconnecté")
     return redirect(url_for("login"))
 
-# ---------- Routes principales ----------
+# ---------- Routes candidats ----------
 def get_all_candidats():
     return supabase.table("candidats").select("*").order("created_at", desc=True).execute().data
 
@@ -140,13 +149,16 @@ def add_candidat():
             "tarif": tarif,
             "versement": versement,
             "photo_url": photo_url,
-            "created_by": get_current_user()["email"]  # stocke l'email complet
+            "created_by": get_current_user()["email"],
+            "updated_by": get_current_user()["email"]
         }
         result = supabase.table("candidats").insert(data).execute()
         candidat_id = result.data[0]["id"]
 
+        log_action("ajout_candidat", f"Ajout candidat {nom} (tel: {telephone}, phase: {phase}, tarif: {tarif}, versement initial: {versement})", candidat_id)
+
         add_notification(
-            message=f"Nouveau candidat : {nom} (tél. {telephone}) par {get_current_user()['email'].split('@')[0]}",
+            message=f"Nouveau candidat : {nom} par {get_current_user()['email'].split('@')[0]}",
             type_notif="candidat",
             lien=f"/candidat/{candidat_id}"
         )
@@ -170,7 +182,7 @@ def candidat_detail(candidat_id):
     if not candidat:
         flash("Candidat introuvable")
         return redirect(url_for("index"))
-    return render_template("candidat_detail.html", c=candidat)
+    return render_template("candidat_detail.html", c=candidat, admin=is_admin())
 
 @app.route("/edit/<candidat_id>", methods=["GET", "POST"])
 def edit_candidat(candidat_id):
@@ -203,6 +215,7 @@ def edit_candidat(candidat_id):
                 photo_url = supabase.storage.from_("photos_candidats").get_public_url(filename)
 
         ancien_versement = candidat["versement"]
+        difference = 0
         if versement != ancien_versement:
             difference = versement - ancien_versement
             update_solde(
@@ -220,8 +233,11 @@ def edit_candidat(candidat_id):
             "tarif": tarif,
             "versement": versement,
             "photo_url": photo_url,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
+            "updated_by": get_current_user()["email"]
         }).eq("id", candidat_id).execute()
+
+        log_action("modification_candidat", f"Modification candidat {candidat['nom']} (ID {candidat_id}) : nouveau nom={nom}, tel={telephone}, phase={phase}, tarif={tarif}, versement={versement} (différence caisse={difference})", candidat_id)
 
         flash("Modifié")
         return redirect(url_for("candidat_detail", candidat_id=candidat_id))
@@ -231,6 +247,9 @@ def edit_candidat(candidat_id):
 def delete_candidat(candidat_id):
     if not get_current_user():
         return redirect(url_for("login"))
+    candidat = get_candidat_by_id(candidat_id)
+    if candidat:
+        log_action("suppression_candidat", f"Suppression candidat {candidat['nom']} (ID {candidat_id})", candidat_id)
     supabase.table("candidats").delete().eq("id", candidat_id).execute()
     flash("Supprimé")
     return redirect(url_for("index"))
@@ -269,15 +288,16 @@ def add_mouvement():
         montant = -abs(float(request.form["montant"]))
         employe = request.form["employe"]
         update_solde(montant, description, "depense", employe=employe)
+        log_action("retrait_caisse", f"Retrait de {abs(montant)} DA par {employe} : {description}")
         flash("Mouvement enregistré")
         return redirect(url_for("caisse"))
     return render_template("mouvement_form.html")
 
-# ---------- Admin : réinitialisation, ajustement caisse et rapports ----------
+# ---------- Admin : réinitialisation, ajustement, rapports, journal ----------
 @app.route("/admin/reset_caisse", methods=["POST"])
 def reset_caisse():
     if not is_admin():
-        flash("Accès réservé à l'administrateur (Khaled)")
+        flash("Accès réservé à l'administrateur")
         return redirect(url_for("caisse"))
     caisse_row = supabase.table("caisse").select("id").execute().data[0]
     supabase.table("caisse").update({"solde": 0, "updated_at": datetime.now().isoformat()}).eq("id", caisse_row["id"]).execute()
@@ -287,6 +307,7 @@ def reset_caisse():
         "type": "reset",
         "created_by": get_current_user()["email"]
     }).execute()
+    log_action("reset_caisse", "Caisse réinitialisée à 0 DA")
     add_notification("Caisse réinitialisée par l'administrateur", "caisse", "/caisse")
     flash("Caisse remise à zéro")
     return redirect(url_for("caisse"))
@@ -296,13 +317,11 @@ def ajuster_caisse():
     if not is_admin():
         flash("Accès réservé à l'administrateur")
         return redirect(url_for("caisse"))
-    
     montant = float(request.form["montant"])
     description = request.form["description"]
     employe = "admin (" + get_current_user()["email"].split('@')[0] + ")"
-    
     update_solde(montant, description, "ajustement_admin", employe=employe)
-    
+    log_action("ajustement_caisse", f"Ajustement manuel de {montant} DA : {description}")
     flash(f"Caisse ajustée de {montant} DA : {description}")
     return redirect(url_for("caisse"))
 
@@ -319,6 +338,14 @@ def admin_rapports():
         totals[emp] = totals.get(emp, 0) + montant
     resets = supabase.table("transactions").select("*").eq("type", "reset").order("date", desc=True).execute().data
     return render_template("admin_rapports.html", totals=totals, resets=resets)
+
+@app.route("/admin/journal")
+def admin_journal():
+    if not is_admin():
+        flash("Accès réservé à l'administrateur")
+        return redirect(url_for("index"))
+    logs = supabase.table("audit_log").select("*").order("created_at", desc=True).limit(200).execute().data
+    return render_template("journal.html", logs=logs)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

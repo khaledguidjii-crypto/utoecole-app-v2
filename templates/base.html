@@ -16,11 +16,12 @@
             <a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="notif-badge" style="display:none;">0</span></a>
             {% if session.user and session.user.email == 'khaled@autoecole.com' %}
                 <a href="/admin/rapports"><i class="fas fa-chart-bar"></i> Admin</a>
+                <a href="/admin/journal"><i class="fas fa-history"></i> Journal</a>
             {% endif %}
             <a href="/logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
         </div>
         <div style="font-size:0.8rem; color:#ddd; margin-top:5px;">
-            👤 {{ session.user.email if session.user else '' }}
+            👤 {{ session.user.email.split('@')[0] if session.user else '' }}
         </div>
     </nav>
     <div class="container">

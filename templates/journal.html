@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1><i class="fas fa-history"></i> Journal d'audit complet</h1>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Action</th><th>Détails</th><th>Utilisateur</th></tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at[:19] }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.details }}</td>
+                    <td>{{ log.user_email.split('@')[0] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
