@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1><i class="fas fa-chart-line"></i> Administration</h1>
+    <h2>Réinitialisation de la caisse</h2>
+    <form method="post" action="/admin/reset_caisse" onsubmit="return confirm('⚠️ Remettre la caisse à zéro ? Cette action est irréversible.')">
+        <button type="submit" style="background:#dc2626;"><i class="fas fa-trash-alt"></i> Réinitialiser la caisse à 0 DA</button>
+    </form>
+    <hr>
+    <h2><i class="fas fa-users"></i> Totaux retirés par employé (Khaled, Sawla, Bureau, etc.)</h2>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Employé</th><th>Total retiré (DA)</th></thead>
+            <tbody>
+                {% for emp, total in totals.items() %}
+                <tr><td>{{ emp }}</td><td>{{ total }} DA</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <hr>
+    <h2><i class="fas fa-history"></i> Historique des réinitialisations</h2>
+    <ul>
+        {% for r in resets %}
+        <li>Le {{ r.date[:19] }} par {{ r.created_by }}</li>
+        {% else %}
+        <li>Aucune réinitialisation</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

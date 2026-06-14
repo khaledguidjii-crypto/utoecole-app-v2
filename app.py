@@ -1,13 +1,13 @@
 import os
 import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from supabase import create_client
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Configuration Supabase (variables d'environnement)
+# Variables d'environnement
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
 
@@ -17,6 +17,14 @@ if not SUPABASE_URL or not SUPABASE_PUBLISHABLE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
 
 # ---------- Fonctions utilitaires ----------
+def get_current_user():
+    """Retourne l'utilisateur connecté depuis la session"""
+    return session.get("user")
+
+def is_admin():
+    user = get_current_user()
+    return user and user.get("email") == "khaled@autoecole.com"
+
 def add_notification(message, type_notif, lien=None):
     supabase.table("notifications").insert({
         "message": message,
@@ -26,7 +34,6 @@ def add_notification(message, type_notif, lien=None):
     }).execute()
 
 def update_solde(montant, description, type_transaction, candidat_id=None, employe="systeme"):
-    # Récupérer l'id et le solde actuel de la caisse
     caisse_rows = supabase.table("caisse").select("id, solde").execute().data
     if not caisse_rows:
         new_row = supabase.table("caisse").insert({"solde": 0}).execute().data
@@ -38,13 +45,11 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
     
     nouveau_solde = solde_actuel + montant
     
-    # Mise à jour avec clause WHERE
     supabase.table("caisse").update({
         "solde": nouveau_solde,
         "updated_at": datetime.now().isoformat()
     }).eq("id", caisse_id).execute()
     
-    # Enregistrer la transaction
     supabase.table("transactions").insert({
         "description": description,
         "montant": montant,
@@ -53,7 +58,6 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         "created_by": employe
     }).execute()
     
-    # Notification pour une sortie d'argent
     if montant < 0:
         add_notification(
             message=f"{employe} a retiré {abs(montant)} DA : {description}",
@@ -62,7 +66,33 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         )
     return nouveau_solde
 
-# ---------- Routes de gestion des candidats ----------
+# ---------- Authentification ----------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        try:
+            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            session["user"] = {
+                "id": resp.user.id,
+                "email": resp.user.email,
+                "role": "admin" if resp.user.email == "khaled@autoecole.com" else "staff"
+            }
+            flash(f"Bienvenue {email} !")
+            return redirect(url_for("index"))
+        except Exception as e:
+            flash(f"Identifiants incorrects")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    supabase.auth.sign_out()
+    flash("Déconnecté")
+    return redirect(url_for("login"))
+
+# ---------- Routes principales ----------
 def get_all_candidats():
     return supabase.table("candidats").select("*").order("created_at", desc=True).execute().data
 
@@ -72,11 +102,15 @@ def get_candidat_by_id(candidat_id):
 
 @app.route("/")
 def index():
+    if not get_current_user():
+        return redirect(url_for("login"))
     candidats = get_all_candidats()
     return render_template("index.html", candidats=candidats)
 
 @app.route("/add", methods=["GET", "POST"])
 def add_candidat():
+    if not get_current_user():
+        return redirect(url_for("login"))
     if request.method == "POST":
         nom = request.form["nom"]
         telephone = request.form["telephone"]
@@ -106,13 +140,13 @@ def add_candidat():
             "tarif": tarif,
             "versement": versement,
             "photo_url": photo_url,
+            "created_by": get_current_user()["email"]  # ← qui a ajouté
         }
         result = supabase.table("candidats").insert(data).execute()
         candidat_id = result.data[0]["id"]
 
-        # Notification et mise à jour caisse
         add_notification(
-            message=f"Nouveau candidat : {nom} (tél. {telephone})",
+            message=f"Nouveau candidat : {nom} (tél. {telephone}) par {get_current_user()['email']}",
             type_notif="candidat",
             lien=f"/candidat/{candidat_id}"
         )
@@ -122,7 +156,7 @@ def add_candidat():
                 description=f"Versement initial de {nom}",
                 type_transaction="versement",
                 candidat_id=candidat_id,
-                employe="systeme"
+                employe=get_current_user()["email"]
             )
         flash("Candidat ajouté")
         return redirect(url_for("index"))
@@ -130,6 +164,8 @@ def add_candidat():
 
 @app.route("/candidat/<candidat_id>")
 def candidat_detail(candidat_id):
+    if not get_current_user():
+        return redirect(url_for("login"))
     candidat = get_candidat_by_id(candidat_id)
     if not candidat:
         flash("Candidat introuvable")
@@ -138,6 +174,8 @@ def candidat_detail(candidat_id):
 
 @app.route("/edit/<candidat_id>", methods=["GET", "POST"])
 def edit_candidat(candidat_id):
+    if not get_current_user():
+        return redirect(url_for("login"))
     candidat = get_candidat_by_id(candidat_id)
     if not candidat:
         flash("Introuvable")
@@ -164,7 +202,6 @@ def edit_candidat(candidat_id):
                 )
                 photo_url = supabase.storage.from_("photos_candidats").get_public_url(filename)
 
-        # Ajustement du solde si le versement change
         ancien_versement = candidat["versement"]
         if versement != ancien_versement:
             difference = versement - ancien_versement
@@ -173,7 +210,7 @@ def edit_candidat(candidat_id):
                 description=f"Ajustement versement pour {nom}",
                 type_transaction="versement",
                 candidat_id=candidat_id,
-                employe="systeme"
+                employe=get_current_user()["email"]
             )
 
         supabase.table("candidats").update({
@@ -186,38 +223,47 @@ def edit_candidat(candidat_id):
             "updated_at": datetime.now().isoformat()
         }).eq("id", candidat_id).execute()
 
-        flash("Candidat modifié")
+        flash("Modifié")
         return redirect(url_for("candidat_detail", candidat_id=candidat_id))
     return render_template("add_candidat.html", candidat=candidat)
 
 @app.route("/delete/<candidat_id>")
 def delete_candidat(candidat_id):
+    if not get_current_user():
+        return redirect(url_for("login"))
     supabase.table("candidats").delete().eq("id", candidat_id).execute()
-    flash("Candidat supprimé")
+    flash("Supprimé")
     return redirect(url_for("index"))
 
-# ---------- Routes pour les notifications ----------
+# ---------- Caisse et notifications ----------
 @app.route("/api/notifications/count")
 def notifications_count():
+    if not get_current_user():
+        return jsonify({"count": 0})
     result = supabase.table("notifications").select("id", count="exact").eq("lu", False).execute()
     return jsonify({"count": result.count})
 
 @app.route("/notifications")
 def notifications_list():
+    if not get_current_user():
+        return redirect(url_for("login"))
     notifs = supabase.table("notifications").select("*").order("created_at", desc=True).execute().data
     supabase.table("notifications").update({"lu": True}).eq("lu", False).execute()
     return render_template("notifications.html", notifications=notifs)
 
-# ---------- Routes pour la caisse ----------
 @app.route("/caisse")
 def caisse():
-    caisse_row = supabase.table("caisse").select("solde").execute().data
-    solde = caisse_row[0]["solde"] if caisse_row else 0
+    if not get_current_user():
+        return redirect(url_for("login"))
+    solde_row = supabase.table("caisse").select("solde").execute().data
+    solde = solde_row[0]["solde"] if solde_row else 0
     transactions = supabase.table("transactions").select("*").order("date", desc=True).limit(100).execute().data
-    return render_template("caisse.html", solde=solde, transactions=transactions)
+    return render_template("caisse.html", solde=solde, transactions=transactions, admin=is_admin())
 
 @app.route("/add_mouvement", methods=["GET", "POST"])
 def add_mouvement():
+    if not get_current_user():
+        return redirect(url_for("login"))
     if request.method == "POST":
         description = request.form["description"]
         montant = -abs(float(request.form["montant"]))
@@ -226,6 +272,41 @@ def add_mouvement():
         flash("Mouvement enregistré")
         return redirect(url_for("caisse"))
     return render_template("mouvement_form.html")
+
+# ---------- Admin : réinitialisation de la caisse et rapports ----------
+@app.route("/admin/reset_caisse", methods=["POST"])
+def reset_caisse():
+    if not is_admin():
+        flash("Accès réservé à l'administrateur (Khaled)")
+        return redirect(url_for("caisse"))
+    caisse_row = supabase.table("caisse").select("id").execute().data[0]
+    supabase.table("caisse").update({"solde": 0, "updated_at": datetime.now().isoformat()}).eq("id", caisse_row["id"]).execute()
+    supabase.table("transactions").insert({
+        "description": "Réinitialisation de la caisse par admin",
+        "montant": 0,
+        "type": "reset",
+        "created_by": get_current_user()["email"],
+        "reset_at": datetime.now().isoformat()
+    }).execute()
+    add_notification("Caisse réinitialisée par l'administrateur", "caisse", "/caisse")
+    flash("Caisse remise à zéro")
+    return redirect(url_for("caisse"))
+
+@app.route("/admin/rapports")
+def admin_rapports():
+    if not is_admin():
+        flash("Accès réservé à l'administrateur")
+        return redirect(url_for("index"))
+    # Total retiré par employé (Khaled, Sawla, Bureau) – on prend les transactions de type 'depense' avec montant < 0
+    retraits = supabase.table("transactions").select("created_by, montant").eq("type", "depense").execute().data
+    totals = {}
+    for r in retraits:
+        emp = r["created_by"]
+        montant = abs(r["montant"])
+        totals[emp] = totals.get(emp, 0) + montant
+    # Liste des réinitialisations
+    resets = supabase.table("transactions").select("*").eq("type", "reset").order("date", desc=True).execute().data
+    return render_template("admin_rapports.html", totals=totals, resets=resets)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
