@@ -82,7 +82,7 @@ def login():
             flash(f"Bienvenue {email} !")
             return redirect(url_for("index"))
         except Exception as e:
-            flash(f"Identifiants incorrects")
+            flash("Identifiants incorrects")
     return render_template("login.html")
 
 @app.route("/logout")
@@ -140,13 +140,13 @@ def add_candidat():
             "tarif": tarif,
             "versement": versement,
             "photo_url": photo_url,
-            "created_by": get_current_user()["email"]  # ← qui a ajouté
+            "created_by": get_current_user()["email"]  # stocke l'email complet
         }
         result = supabase.table("candidats").insert(data).execute()
         candidat_id = result.data[0]["id"]
 
         add_notification(
-            message=f"Nouveau candidat : {nom} (tél. {telephone}) par {get_current_user()['email']}",
+            message=f"Nouveau candidat : {nom} (tél. {telephone}) par {get_current_user()['email'].split('@')[0]}",
             type_notif="candidat",
             lien=f"/candidat/{candidat_id}"
         )
@@ -273,7 +273,7 @@ def add_mouvement():
         return redirect(url_for("caisse"))
     return render_template("mouvement_form.html")
 
-# ---------- Admin : réinitialisation de la caisse et rapports ----------
+# ---------- Admin : réinitialisation, ajustement caisse et rapports ----------
 @app.route("/admin/reset_caisse", methods=["POST"])
 def reset_caisse():
     if not is_admin():
@@ -285,11 +285,25 @@ def reset_caisse():
         "description": "Réinitialisation de la caisse par admin",
         "montant": 0,
         "type": "reset",
-        "created_by": get_current_user()["email"],
-        "reset_at": datetime.now().isoformat()
+        "created_by": get_current_user()["email"]
     }).execute()
     add_notification("Caisse réinitialisée par l'administrateur", "caisse", "/caisse")
     flash("Caisse remise à zéro")
+    return redirect(url_for("caisse"))
+
+@app.route("/admin/ajuster_caisse", methods=["POST"])
+def ajuster_caisse():
+    if not is_admin():
+        flash("Accès réservé à l'administrateur")
+        return redirect(url_for("caisse"))
+    
+    montant = float(request.form["montant"])
+    description = request.form["description"]
+    employe = "admin (" + get_current_user()["email"].split('@')[0] + ")"
+    
+    update_solde(montant, description, "ajustement_admin", employe=employe)
+    
+    flash(f"Caisse ajustée de {montant} DA : {description}")
     return redirect(url_for("caisse"))
 
 @app.route("/admin/rapports")
@@ -297,14 +311,12 @@ def admin_rapports():
     if not is_admin():
         flash("Accès réservé à l'administrateur")
         return redirect(url_for("index"))
-    # Total retiré par employé (Khaled, Sawla, Bureau) – on prend les transactions de type 'depense' avec montant < 0
     retraits = supabase.table("transactions").select("created_by, montant").eq("type", "depense").execute().data
     totals = {}
     for r in retraits:
         emp = r["created_by"]
         montant = abs(r["montant"])
         totals[emp] = totals.get(emp, 0) + montant
-    # Liste des réinitialisations
     resets = supabase.table("transactions").select("*").eq("type", "reset").order("date", desc=True).execute().data
     return render_template("admin_rapports.html", totals=totals, resets=resets)
 
