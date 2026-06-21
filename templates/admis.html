@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1><i class="fas fa-trophy"></i> Candidats admis (permis obtenu)</h1>
+<div class="candidat-grid">
+    {% for c in admis %}
+    <div class="candidat-card" style="border-left: 4px solid #10b981;">
+        <img src="{{ c.photo_url or 'https://via.placeholder.com/150?text=Photo' }}" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
+        <div class="candidat-info">
+            <h3>{{ c.nom }} ✅</h3>
+            <p><i class="fas fa-phone"></i> {{ c.telephone }}</p>
+            <p><i class="fas fa-calendar-check"></i> Obtenu le : {{ c.date_obtention[:10] if c.date_obtention else 'Non renseigné' }}</p>
+            <p><i class="fas fa-user-check"></i> Validé par : {{ c.valide_par.split('@')[0] if c.valide_par else 'inconnu' }}</p>
+            <a href="/candidat/{{ c.id }}" class="btn-detail"><i class="fas fa-eye"></i> Détails</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card"><p>Aucun candidat admis pour le moment.</p></div>
+    {% endfor %}
+</div>
+{% endblock %}

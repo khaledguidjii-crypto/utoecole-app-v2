@@ -9,7 +9,6 @@
     <p class="reste"><i class="fas fa-wallet"></i> <strong>Reste à payer :</strong> {{ "%.2f"|format(c.tarif - c.versement) }} DA</p>
     <p><i class="fas fa-calendar-alt"></i> <strong>Date inscription :</strong> {{ c.created_at[:10] if c.created_at else '' }}</p>
 
-    {# Traçabilité réservée à l'admin #}
     {% if admin %}
         <hr>
         <p><i class="fas fa-user-plus"></i> <strong>Ajouté par :</strong> {{ c.created_by.split('@')[0] if c.created_by else 'inconnu' }}</p>
@@ -19,9 +18,21 @@
     {% if c.photo_url %}
         <div style="margin: 1rem 0;"><img src="{{ c.photo_url }}" width="150" style="border-radius: 20px;"></div>
     {% endif %}
-    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
         <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
         <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
+        {% if c.statut == 'actif' %}
+            <form method="post" action="/obtenir_permis/{{ c.id }}" style="display:inline;">
+                <button type="submit" class="btn-detail" style="background:#10b981; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
+                    <i class="fas fa-award"></i> Obtenir le permis
+                </button>
+            </form>
+        {% else %}
+            <span style="background:#10b981; color:white; padding:0.5rem 1rem; border-radius:12px; display:inline-block;">
+                <i class="fas fa-check-circle"></i> Permis obtenu le {{ c.date_obtention[:10] }}
+            </span>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

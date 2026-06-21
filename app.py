@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from supabase import create_client
 
@@ -32,7 +32,6 @@ def add_notification(message, type_notif, lien=None):
     }).execute()
 
 def log_action(action, details, candidat_id=None, montant=None):
-    """Enregistre chaque action dans la table audit_log (admin seulement pour consultation)"""
     user = get_current_user()
     if user:
         supabase.table("audit_log").insert({
@@ -64,7 +63,8 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
         "montant": montant,
         "type": type_transaction,
         "candidat_id": candidat_id,
-        "created_by": employe
+        "created_by": employe,
+        "date_transaction": datetime.now().isoformat()
     }).execute()
     
     if montant < 0:
@@ -74,6 +74,28 @@ def update_solde(montant, description, type_transaction, candidat_id=None, emplo
             lien="/caisse"
         )
     return nouveau_solde
+
+def get_candidats_by_statut(statut):
+    return supabase.table("candidats").select("*").eq("statut", statut).order("created_at", desc=True).execute().data
+
+def get_stats_jour():
+    aujourdhui = date.today().isoformat()
+    demain = (date.today().replace(day=date.today().day+1)).isoformat()
+    
+    nouveaux = supabase.table("candidats").select("id", count="exact").gte("created_at", aujourdhui).lt("created_at", demain).execute().count
+    versements = supabase.table("transactions").select("montant").eq("type", "versement").gte("date_transaction", aujourdhui).lt("date_transaction", demain).execute().data
+    total_versements = sum([abs(t["montant"]) for t in versements])
+    retraits = supabase.table("transactions").select("montant").eq("type", "depense").gte("date_transaction", aujourdhui).lt("date_transaction", demain).execute().data
+    total_retraits = sum([abs(t["montant"]) for t in retraits])
+    transactions = supabase.table("transactions").select("*").gte("date_transaction", aujourdhui).lt("date_transaction", demain).order("date_transaction", desc=True).execute().data
+    
+    return {
+        "date": aujourdhui,
+        "nouveaux": nouveaux,
+        "versements": total_versements,
+        "retraits": total_retraits,
+        "transactions": transactions
+    }
 
 # ---------- Authentification ----------
 @app.route("/login", methods=["GET", "POST"])
@@ -101,9 +123,9 @@ def logout():
     flash("Déconnecté")
     return redirect(url_for("login"))
 
-# ---------- Routes candidats ----------
+# ---------- Routes ----------
 def get_all_candidats():
-    return supabase.table("candidats").select("*").order("created_at", desc=True).execute().data
+    return supabase.table("candidats").select("*").eq("statut", "actif").order("created_at", desc=True).execute().data
 
 def get_candidat_by_id(candidat_id):
     res = supabase.table("candidats").select("*").eq("id", candidat_id).execute()
@@ -113,8 +135,25 @@ def get_candidat_by_id(candidat_id):
 def index():
     if not get_current_user():
         return redirect(url_for("login"))
+    if is_admin():
+        stats = get_stats_jour()
+        return render_template("dashboard.html", stats=stats, admin=True)
+    else:
+        return redirect(url_for("liste"))
+
+@app.route("/liste")
+def liste():
+    if not get_current_user():
+        return redirect(url_for("login"))
     candidats = get_all_candidats()
     return render_template("index.html", candidats=candidats)
+
+@app.route("/admis")
+def admis():
+    if not get_current_user():
+        return redirect(url_for("login"))
+    admis = get_candidats_by_statut("admis")
+    return render_template("admis.html", admis=admis)
 
 @app.route("/add", methods=["GET", "POST"])
 def add_candidat():
@@ -150,13 +189,13 @@ def add_candidat():
             "versement": versement,
             "photo_url": photo_url,
             "created_by": get_current_user()["email"],
-            "updated_by": get_current_user()["email"]
+            "updated_by": get_current_user()["email"],
+            "statut": "actif"
         }
         result = supabase.table("candidats").insert(data).execute()
         candidat_id = result.data[0]["id"]
 
         log_action("ajout_candidat", f"Ajout candidat {nom} (tel: {telephone}, phase: {phase}, tarif: {tarif}, versement initial: {versement})", candidat_id)
-
         add_notification(
             message=f"Nouveau candidat : {nom} par {get_current_user()['email'].split('@')[0]}",
             type_notif="candidat",
@@ -171,7 +210,7 @@ def add_candidat():
                 employe=get_current_user()["email"]
             )
         flash("Candidat ajouté")
-        return redirect(url_for("index"))
+        return redirect(url_for("liste"))
     return render_template("add_candidat.html")
 
 @app.route("/candidat/<candidat_id>")
@@ -181,8 +220,31 @@ def candidat_detail(candidat_id):
     candidat = get_candidat_by_id(candidat_id)
     if not candidat:
         flash("Candidat introuvable")
-        return redirect(url_for("index"))
+        return redirect(url_for("liste"))
     return render_template("candidat_detail.html", c=candidat, admin=is_admin())
+
+@app.route("/obtenir_permis/<candidat_id>", methods=["POST"])
+def obtenir_permis(candidat_id):
+    if not get_current_user():
+        flash("Veuillez vous connecter")
+        return redirect(url_for("login"))
+    candidat = get_candidat_by_id(candidat_id)
+    if not candidat:
+        flash("Candidat introuvable")
+        return redirect(url_for("liste"))
+    supabase.table("candidats").update({
+        "statut": "admis",
+        "date_obtention": datetime.now().isoformat(),
+        "valide_par": get_current_user()["email"]
+    }).eq("id", candidat_id).execute()
+    log_action("obtention_permis", f"Candidat {candidat['nom']} a obtenu son permis (validé par {get_current_user()['email'].split('@')[0]})", candidat_id)
+    add_notification(
+        message=f"🎉 {candidat['nom']} a obtenu son permis ! Validé par {get_current_user()['email'].split('@')[0]}",
+        type_notif="candidat",
+        lien=f"/candidat/{candidat_id}"
+    )
+    flash(f"Félicitations ! {candidat['nom']} a obtenu son permis.")
+    return redirect(url_for("candidat_detail", candidat_id=candidat_id))
 
 @app.route("/edit/<candidat_id>", methods=["GET", "POST"])
 def edit_candidat(candidat_id):
@@ -191,7 +253,7 @@ def edit_candidat(candidat_id):
     candidat = get_candidat_by_id(candidat_id)
     if not candidat:
         flash("Introuvable")
-        return redirect(url_for("index"))
+        return redirect(url_for("liste"))
     if request.method == "POST":
         nom = request.form["nom"]
         telephone = request.form["telephone"]
@@ -252,7 +314,7 @@ def delete_candidat(candidat_id):
         log_action("suppression_candidat", f"Suppression candidat {candidat['nom']} (ID {candidat_id})", candidat_id)
     supabase.table("candidats").delete().eq("id", candidat_id).execute()
     flash("Supprimé")
-    return redirect(url_for("index"))
+    return redirect(url_for("liste"))
 
 # ---------- Caisse et notifications ----------
 @app.route("/api/notifications/count")
@@ -276,7 +338,7 @@ def caisse():
         return redirect(url_for("login"))
     solde_row = supabase.table("caisse").select("solde").execute().data
     solde = solde_row[0]["solde"] if solde_row else 0
-    transactions = supabase.table("transactions").select("*").order("date", desc=True).limit(100).execute().data
+    transactions = supabase.table("transactions").select("*").order("date_transaction", desc=True).limit(100).execute().data
     return render_template("caisse.html", solde=solde, transactions=transactions, admin=is_admin())
 
 @app.route("/add_mouvement", methods=["GET", "POST"])
@@ -293,7 +355,7 @@ def add_mouvement():
         return redirect(url_for("caisse"))
     return render_template("mouvement_form.html")
 
-# ---------- Admin : réinitialisation, ajustement, rapports, journal ----------
+# ---------- Admin ----------
 @app.route("/admin/reset_caisse", methods=["POST"])
 def reset_caisse():
     if not is_admin():
@@ -305,7 +367,8 @@ def reset_caisse():
         "description": "Réinitialisation de la caisse par admin",
         "montant": 0,
         "type": "reset",
-        "created_by": get_current_user()["email"]
+        "created_by": get_current_user()["email"],
+        "date_transaction": datetime.now().isoformat()
     }).execute()
     log_action("reset_caisse", "Caisse réinitialisée à 0 DA")
     add_notification("Caisse réinitialisée par l'administrateur", "caisse", "/caisse")
@@ -336,7 +399,7 @@ def admin_rapports():
         emp = r["created_by"]
         montant = abs(r["montant"])
         totals[emp] = totals.get(emp, 0) + montant
-    resets = supabase.table("transactions").select("*").eq("type", "reset").order("date", desc=True).execute().data
+    resets = supabase.table("transactions").select("*").eq("type", "reset").order("date_transaction", desc=True).execute().data
     return render_template("admin_rapports.html", totals=totals, resets=resets)
 
 @app.route("/admin/journal")

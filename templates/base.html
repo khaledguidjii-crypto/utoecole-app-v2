@@ -10,10 +10,19 @@
 <body>
     <nav>
         <div class="nav-links">
-            <a href="/"><i class="fas fa-home"></i> Accueil</a>
+            <a href="/">
+                <i class="fas fa-home"></i> 
+                {% if session.user and session.user.email == 'khaled@autoecole.com' %}
+                    Tableau de bord
+                {% else %}
+                    Accueil
+                {% endif %}
+            </a>
+            <a href="/liste"><i class="fas fa-users"></i> Candidats</a>
+            <a href="/admis"><i class="fas fa-trophy"></i> Admis</a>
             <a href="/add"><i class="fas fa-user-plus"></i> Ajouter</a>
             <a href="/caisse"><i class="fas fa-coins"></i> Caisse</a>
-            <a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="notif-badge" style="display:none;">0</span></a>
+            <a href="/notifications"><i class="fas fa-bell"></i> <span id="notif-badge" style="display:none;">0</span></a>
             {% if session.user and session.user.email == 'khaled@autoecole.com' %}
                 <a href="/admin/rapports"><i class="fas fa-chart-bar"></i> Admin</a>
                 <a href="/admin/journal"><i class="fas fa-history"></i> Journal</a>
