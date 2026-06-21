@@ -81,14 +81,12 @@ def get_candidats_by_statut(statut):
 def get_stats_jour():
     aujourdhui = date.today().isoformat()
     demain = (date.today().replace(day=date.today().day+1)).isoformat()
-    
     nouveaux = supabase.table("candidats").select("id", count="exact").gte("created_at", aujourdhui).lt("created_at", demain).execute().count
     versements = supabase.table("transactions").select("montant").eq("type", "versement").gte("date_transaction", aujourdhui).lt("date_transaction", demain).execute().data
     total_versements = sum([abs(t["montant"]) for t in versements])
     retraits = supabase.table("transactions").select("montant").eq("type", "depense").gte("date_transaction", aujourdhui).lt("date_transaction", demain).execute().data
     total_retraits = sum([abs(t["montant"]) for t in retraits])
     transactions = supabase.table("transactions").select("*").gte("date_transaction", aujourdhui).lt("date_transaction", demain).order("date_transaction", desc=True).execute().data
-    
     return {
         "date": aujourdhui,
         "nouveaux": nouveaux,
@@ -223,6 +221,42 @@ def candidat_detail(candidat_id):
         return redirect(url_for("liste"))
     return render_template("candidat_detail.html", c=candidat, admin=is_admin())
 
+@app.route("/changer_phase/<candidat_id>", methods=["POST"])
+def changer_phase(candidat_id):
+    if not get_current_user():
+        flash("Veuillez vous connecter")
+        return redirect(url_for("login"))
+    
+    candidat = get_candidat_by_id(candidat_id)
+    if not candidat:
+        flash("Candidat introuvable")
+        return redirect(url_for("liste"))
+    
+    phase_actuelle = candidat["phase"]
+    phases = ["code", "creneau", "circuit"]
+    if phase_actuelle in phases:
+        index = phases.index(phase_actuelle)
+        if index < len(phases) - 1:
+            nouvelle_phase = phases[index + 1]
+            supabase.table("candidats").update({
+                "phase": nouvelle_phase,
+                "updated_by": get_current_user()["email"]
+            }).eq("id", candidat_id).execute()
+            
+            log_action("changement_phase", f"Candidat {candidat['nom']} passe de {phase_actuelle} à {nouvelle_phase}", candidat_id)
+            add_notification(
+                message=f"📌 {candidat['nom']} a validé la phase {phase_actuelle} et passe à {nouvelle_phase}",
+                type_notif="candidat",
+                lien=f"/candidat/{candidat_id}"
+            )
+            flash(f"{candidat['nom']} passe à la phase {nouvelle_phase}.")
+        else:
+            # Si déjà à circuit, on peut proposer le permis
+            flash(f"{candidat['nom']} est déjà en phase circuit. Cliquez sur 'Obtenir le permis' pour finaliser.")
+    else:
+        flash("Phase inconnue")
+    return redirect(url_for("candidat_detail", candidat_id=candidat_id))
+
 @app.route("/obtenir_permis/<candidat_id>", methods=["POST"])
 def obtenir_permis(candidat_id):
     if not get_current_user():
@@ -244,6 +278,33 @@ def obtenir_permis(candidat_id):
         lien=f"/candidat/{candidat_id}"
     )
     flash(f"Félicitations ! {candidat['nom']} a obtenu son permis.")
+    return redirect(url_for("candidat_detail", candidat_id=candidat_id))
+
+@app.route("/revoquer_permis/<candidat_id>", methods=["POST"])
+def revoquer_permis(candidat_id):
+    if not get_current_user():
+        flash("Veuillez vous connecter")
+        return redirect(url_for("login"))
+    
+    candidat = get_candidat_by_id(candidat_id)
+    if not candidat:
+        flash("Candidat introuvable")
+        return redirect(url_for("admis"))
+    
+    supabase.table("candidats").update({
+        "statut": "actif",
+        "date_obtention": None,
+        "valide_par": None,
+        "updated_by": get_current_user()["email"]
+    }).eq("id", candidat_id).execute()
+    
+    log_action("revoquer_permis", f"Permis révoqué pour {candidat['nom']} (par {get_current_user()['email'].split('@')[0]})", candidat_id)
+    add_notification(
+        message=f"⚠️ Le permis de {candidat['nom']} a été révoqué par {get_current_user()['email'].split('@')[0]}",
+        type_notif="candidat",
+        lien=f"/candidat/{candidat_id}"
+    )
+    flash(f"Le permis de {candidat['nom']} a été révoqué. Il est de nouveau dans la liste des actifs.")
     return redirect(url_for("candidat_detail", candidat_id=candidat_id))
 
 @app.route("/edit/<candidat_id>", methods=["GET", "POST"])

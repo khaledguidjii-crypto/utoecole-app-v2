@@ -22,13 +22,30 @@
     <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
         <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
         <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
+
         {% if c.statut == 'actif' %}
-            <form method="post" action="/obtenir_permis/{{ c.id }}" style="display:inline;">
-                <button type="submit" class="btn-detail" style="background:#10b981; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
-                    <i class="fas fa-award"></i> Obtenir le permis
+            <!-- Bouton pour passer à la phase suivante (si pas encore à circuit) -->
+            {% if c.phase != 'circuit' %}
+                <form method="post" action="/changer_phase/{{ c.id }}" style="display:inline;">
+                    <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
+                        <i class="fas fa-arrow-right"></i> Passer à la phase suivante
+                    </button>
+                </form>
+            {% else %}
+                <!-- Si déjà à circuit, proposer d'obtenir le permis -->
+                <form method="post" action="/obtenir_permis/{{ c.id }}" style="display:inline;">
+                    <button type="submit" class="btn-detail" style="background:#10b981; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
+                        <i class="fas fa-award"></i> Obtenir le permis
+                    </button>
+                </form>
+            {% endif %}
+        {% elif c.statut == 'admis' %}
+            <!-- Bouton pour révoquer le permis (visible à tous) -->
+            <form method="post" action="/revoquer_permis/{{ c.id }}" style="display:inline;">
+                <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;" onclick="return confirm('⚠️ Révoquer le permis de {{ c.nom }} ? Il reviendra dans la liste des actifs.')">
+                    <i class="fas fa-undo"></i> Révoquer le permis
                 </button>
             </form>
-        {% else %}
             <span style="background:#10b981; color:white; padding:0.5rem 1rem; border-radius:12px; display:inline-block;">
                 <i class="fas fa-check-circle"></i> Permis obtenu le {{ c.date_obtention[:10] }}
             </span>
