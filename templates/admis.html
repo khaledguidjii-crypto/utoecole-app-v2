@@ -1,29 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<h1><i class="fas fa-trophy"></i> Candidats admis (permis obtenu)</h1>
-
-<div class="candidat-grid">
-    {% for c in admis %}
-    <div class="candidat-card" style="border-left: 4px solid #10b981;">
-        {% if c.photo_url %}
-            <img src="{{ c.photo_url }}" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
-        {% else %}
-            <img src="https://via.placeholder.com/150?text=Photo" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
-        {% endif %}
-        <div class="candidat-info">
-            <h3>{{ c.nom }} ✅</h3>
-            <p><i class="fas fa-phone"></i> <strong>Téléphone :</strong> {{ c.telephone }}</p>
-            <p><i class="fas fa-flag-checkered"></i> <strong>Phase :</strong> {{ c.phase|capitalize }}</p>
-            <p><i class="fas fa-tag"></i> <strong>Tarif total :</strong> {{ c.tarif }} DA</p>
-            <p><i class="fas fa-hand-holding-usd"></i> <strong>Versement effectué :</strong> {{ c.versement }} DA</p>
-            <p class="reste"><i class="fas fa-wallet"></i> <strong>Reste à payer :</strong> {{ "%.2f"|format(c.tarif - c.versement) }} DA</p>
-            <p><i class="fas fa-calendar-check"></i> <strong>Obtenu le :</strong> {{ c.date_obtention[:10] if c.date_obtention else 'Non renseigné' }}</p>
-            <p><i class="fas fa-user-check"></i> <strong>Validé par :</strong> {{ c.valide_par.split('@')[0] if c.valide_par else 'inconnu' }}</p>
-            <a href="/candidat/{{ c.id }}" class="btn-detail"><i class="fas fa-eye"></i> Détails</a>
-        </div>
-    </div>
-    {% else %}
-    <div class="card"><p>Aucun candidat admis pour le moment.</p></div>
-    {% endfor %}
+<h1>Candidats admis</h1>
+{% for c in admis %}
+<div style="border:1px solid #ddd; padding:15px; margin:10px; border-radius:10px; background:white;">
+    <img src="{{ c.photo_url or '' }}" width="100" style="border-radius:50%;">
+    <p><strong>Nom:</strong> {{ c.nom }}</p>
+    <p><strong>Téléphone:</strong> {{ c.telephone }}</p>
+    <p><strong>Phase:</strong> {{ c.phase }}</p>
+    <p><strong>Tarif:</strong> {{ c.tarif }} DA</p>
+    <p><strong>Versement:</strong> {{ c.versement }} DA</p>
+    <p><strong>Reste:</strong> {{ c.tarif - c.versement }} DA</p>
+    <p><strong>Obtenu le:</strong> {{ c.date_obtention[:10] if c.date_obtention else 'Non renseigné' }}</p>
+    <p><strong>Validé par:</strong> {{ c.valide_par.split('@')[0] if c.valide_par else 'inconnu' }}</p>
+    <a href="/candidat/{{ c.id }}">Voir détails</a>
 </div>
+{% else %}
+<p>Aucun candidat admis.</p>
+{% endfor %}
 {% endblock %}
