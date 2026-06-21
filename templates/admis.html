@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <h1><i class="fas fa-trophy"></i> Candidats admis (permis obtenu)</h1>
+
 <div class="candidat-grid">
     {% for c in admis %}
     <div class="candidat-card" style="border-left: 4px solid #10b981;">
-        <img src="{{ c.photo_url or 'https://via.placeholder.com/150?text=Photo' }}" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
+        {% if c.photo_url %}
+            <img src="{{ c.photo_url }}" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
+        {% else %}
+            <img src="https://via.placeholder.com/150?text=Photo" alt="Photo" style="height: 150px; width:100%; object-fit:cover;">
+        {% endif %}
         <div class="candidat-info">
             <h3>{{ c.nom }} ✅</h3>
             <p><i class="fas fa-phone"></i> <strong>Téléphone :</strong> {{ c.telephone }}</p>

@@ -121,7 +121,7 @@ def logout():
     flash("Déconnecté")
     return redirect(url_for("login"))
 
-# ---------- Routes ----------
+# ---------- Routes candidats ----------
 def get_all_candidats():
     return supabase.table("candidats").select("*").eq("statut", "actif").order("created_at", desc=True).execute().data
 
@@ -251,7 +251,6 @@ def changer_phase(candidat_id):
             )
             flash(f"{candidat['nom']} passe à la phase {nouvelle_phase}.")
         else:
-            # Si déjà à circuit, on peut proposer le permis
             flash(f"{candidat['nom']} est déjà en phase circuit. Cliquez sur 'Obtenir le permis' pour finaliser.")
     else:
         flash("Phase inconnue")
