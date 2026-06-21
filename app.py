@@ -95,6 +95,21 @@ def get_stats_jour():
         "transactions": transactions
     }
 
+# Nouvelle fonction : statistiques par phase
+def get_candidats_stats():
+    total_actifs = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").execute().count
+    code = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").eq("phase", "code").execute().count
+    creneau = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").eq("phase", "creneau").execute().count
+    circuit = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").eq("phase", "circuit").execute().count
+    admis = supabase.table("candidats").select("id", count="exact").eq("statut", "admis").execute().count
+    return {
+        "total_actifs": total_actifs,
+        "code": code,
+        "creneau": creneau,
+        "circuit": circuit,
+        "admis": admis
+    }
+
 # ---------- Authentification ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -135,7 +150,8 @@ def index():
         return redirect(url_for("login"))
     if is_admin():
         stats = get_stats_jour()
-        return render_template("dashboard.html", stats=stats, admin=True)
+        candidats_stats = get_candidats_stats()
+        return render_template("dashboard.html", stats=stats, candidats_stats=candidats_stats, admin=True)
     else:
         return redirect(url_for("liste"))
 

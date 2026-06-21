@@ -1,30 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
-<h1><i class="fas fa-chart-pie"></i> Tableau de bord du jour</h1>
 
-<div class="stats-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:2rem;">
-    <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color:white; border-radius:20px; padding:1.5rem; text-align:center;">
-        <i class="fas fa-user-plus" style="font-size:2.5rem;"></i>
-        <h3 style="margin:0.5rem 0;">{{ stats.nouveaux }}</h3>
-        <p style="margin:0;">Nouveaux candidats</p>
-    </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669); color:white; border-radius:20px; padding:1.5rem; text-align:center;">
-        <i class="fas fa-arrow-down" style="font-size:2.5rem;"></i>
-        <h3 style="margin:0.5rem 0;">{{ stats.versements }} DA</h3>
-        <p style="margin:0;">Encaissé aujourd'hui</p>
-    </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626); color:white; border-radius:20px; padding:1.5rem; text-align:center;">
-        <i class="fas fa-arrow-up" style="font-size:2.5rem;"></i>
-        <h3 style="margin:0.5rem 0;">{{ stats.retraits }} DA</h3>
-        <p style="margin:0;">Retiré aujourd'hui</p>
-    </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color:white; border-radius:20px; padding:1.5rem; text-align:center;">
-        <i class="fas fa-wallet" style="font-size:2.5rem;"></i>
-        <h3 style="margin:0.5rem 0;">{{ stats.versements - stats.retraits }} DA</h3>
-        <p style="margin:0;">Solde du jour</p>
+<h1><i class="fas fa-chart-pie"></i> Tableau de bord</h1>
+
+<!-- Section : État des candidats -->
+<div style="background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0;"><i class="fas fa-users"></i> Candidats actifs</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <!-- Total -->
+        <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border-radius: 16px; padding: 1.2rem; text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold;">{{ candidats_stats.total_actifs }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total actifs</div>
+        </div>
+        <!-- Code -->
+        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 16px; padding: 1.2rem; text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold;">{{ candidats_stats.code }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Code</div>
+        </div>
+        <!-- Créneau -->
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 16px; padding: 1.2rem; text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold;">{{ candidats_stats.creneau }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Créneau</div>
+        </div>
+        <!-- Circuit -->
+        <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border-radius: 16px; padding: 1.2rem; text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold;">{{ candidats_stats.circuit }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Circuit</div>
+        </div>
+        <!-- Admis -->
+        <div style="background: linear-gradient(135deg, #ec4899, #db2777); color: white; border-radius: 16px; padding: 1.2rem; text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold;">{{ candidats_stats.admis }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Admis (permis)</div>
+        </div>
     </div>
 </div>
 
+<!-- Section : Résumé du jour (encaissements, retraits, etc.) -->
+<div style="background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0;"><i class="fas fa-calendar-day"></i> Activité du jour</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <div style="background: #eff6ff; border-radius: 12px; padding: 1rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #2563eb;">{{ stats.nouveaux }}</div>
+            <div style="color: #475569;">Nouveaux candidats</div>
+        </div>
+        <div style="background: #ecfdf5; border-radius: 12px; padding: 1rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #059669;">{{ stats.versements }} DA</div>
+            <div style="color: #475569;">Encaissé aujourd'hui</div>
+        </div>
+        <div style="background: #fef2f2; border-radius: 12px; padding: 1rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #dc2626;">{{ stats.retraits }} DA</div>
+            <div style="color: #475569;">Retiré aujourd'hui</div>
+        </div>
+        <div style="background: #f5f3ff; border-radius: 12px; padding: 1rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #7c3aed;">{{ stats.versements - stats.retraits }} DA</div>
+            <div style="color: #475569;">Solde du jour</div>
+        </div>
+    </div>
+</div>
+
+<!-- Dernières transactions -->
 <h2><i class="fas fa-clock"></i> Dernières transactions du jour</h2>
 <div class="table-responsive">
     <table>
@@ -46,7 +80,7 @@
     </table>
 </div>
 
-<div style="margin-top:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;">
+<div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
     <a href="/liste" class="btn-detail" style="background:#3b82f6; color:white; padding:0.8rem 1.5rem; border-radius:12px; text-decoration:none;">
         <i class="fas fa-users"></i> Voir les candidats actifs
     </a>
@@ -54,4 +88,5 @@
         <i class="fas fa-trophy"></i> Voir les admis
     </a>
 </div>
+
 {% endblock %}
