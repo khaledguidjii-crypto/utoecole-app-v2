@@ -95,7 +95,6 @@ def get_stats_jour():
         "transactions": transactions
     }
 
-# Nouvelle fonction : statistiques par phase
 def get_candidats_stats():
     total_actifs = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").execute().count
     code = supabase.table("candidats").select("id", count="exact").eq("statut", "actif").eq("phase", "code").execute().count
@@ -380,6 +379,47 @@ def edit_candidat(candidat_id):
         flash("Modifié")
         return redirect(url_for("candidat_detail", candidat_id=candidat_id))
     return render_template("add_candidat.html", candidat=candidat)
+
+@app.route("/add_paiement/<candidat_id>", methods=["POST"])
+def add_paiement(candidat_id):
+    if not get_current_user():
+        flash("Veuillez vous connecter")
+        return redirect(url_for("login"))
+    
+    candidat = get_candidat_by_id(candidat_id)
+    if not candidat:
+        flash("Candidat introuvable")
+        return redirect(url_for("liste"))
+    
+    montant = float(request.form["montant"])
+    if montant <= 0:
+        flash("Le montant doit être positif")
+        return redirect(url_for("candidat_detail", candidat_id=candidat_id))
+    
+    nouveau_versement = candidat["versement"] + montant
+    
+    supabase.table("candidats").update({
+        "versement": nouveau_versement,
+        "updated_by": get_current_user()["email"],
+        "updated_at": datetime.now().isoformat()
+    }).eq("id", candidat_id).execute()
+    
+    update_solde(
+        montant=montant,
+        description=f"Versement de {candidat['nom']}",
+        type_transaction="versement",
+        candidat_id=candidat_id,
+        employe=get_current_user()["email"]
+    )
+    
+    log_action("ajout_versement", f"Ajout de {montant} DA au versement de {candidat['nom']} (nouveau total: {nouveau_versement})", candidat_id)
+    add_notification(
+        message=f"💵 {candidat['nom']} a effectué un versement de {montant} DA",
+        type_notif="candidat",
+        lien=f"/candidat/{candidat_id}"
+    )
+    flash(f"Versement de {montant} DA ajouté pour {candidat['nom']}")
+    return redirect(url_for("candidat_detail", candidat_id=candidat_id))
 
 @app.route("/delete/<candidat_id>")
 def delete_candidat(candidat_id):

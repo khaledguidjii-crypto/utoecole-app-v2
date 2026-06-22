@@ -19,12 +19,28 @@
         <div style="margin: 1rem 0;"><img src="{{ c.photo_url }}" width="150" style="border-radius: 20px;"></div>
     {% endif %}
 
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+    <!-- ========================================= -->
+    <!--   NOUVEAU : BOUTON AJOUTER UN VERSEMENT   -->
+    <!-- ========================================= -->
+    <div style="margin-top: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 16px; border: 1px solid #bbf7d0;">
+        <h4 style="margin:0 0 0.5rem 0;"><i class="fas fa-hand-holding-usd"></i> Ajouter un versement</h4>
+        <form method="post" action="/add_paiement/{{ c.id }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 150px;">
+                <input type="number" step="0.01" name="montant" placeholder="Montant (DA)" required style="width: 100%; padding: 0.6rem; border-radius: 12px; border: 1px solid #cbd5e1;">
+            </div>
+            <button type="submit" style="background:#10b981; color:white; border:none; padding:0.6rem 1.5rem; border-radius:12px; cursor:pointer; font-weight:bold;">
+                <i class="fas fa-plus-circle"></i> Ajouter
+            </button>
+        </form>
+        <small style="color: #475569;">Ajoute un montant au versement total et enregistre la transaction dans la caisse.</small>
+    </div>
+
+    <!-- Boutons d'actions existants -->
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
         <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
         <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
 
         {% if c.statut == 'actif' %}
-            <!-- Bouton pour passer à la phase suivante (si pas encore à circuit) -->
             {% if c.phase != 'circuit' %}
                 <form method="post" action="/changer_phase/{{ c.id }}" style="display:inline;">
                     <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
@@ -32,7 +48,6 @@
                     </button>
                 </form>
             {% else %}
-                <!-- Si déjà à circuit, proposer d'obtenir le permis -->
                 <form method="post" action="/obtenir_permis/{{ c.id }}" style="display:inline;">
                     <button type="submit" class="btn-detail" style="background:#10b981; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
                         <i class="fas fa-award"></i> Obtenir le permis
@@ -40,7 +55,6 @@
                 </form>
             {% endif %}
         {% elif c.statut == 'admis' %}
-            <!-- Bouton pour révoquer le permis (visible à tous) -->
             <form method="post" action="/revoquer_permis/{{ c.id }}" style="display:inline;">
                 <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;" onclick="return confirm('⚠️ Révoquer le permis de {{ c.nom }} ? Il reviendra dans la liste des actifs.')">
                     <i class="fas fa-undo"></i> Révoquer le permis
