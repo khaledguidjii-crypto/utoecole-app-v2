@@ -109,6 +109,16 @@ def get_candidats_stats():
         "admis": admis
     }
 
+# ---------- NOUVELLE FONCTION : récupérer les transactions d'un candidat ----------
+def get_transactions_for_candidat(candidat_id):
+    # On récupère toutes les transactions de type 'versement' liées à ce candidat
+    res = supabase.table("transactions").select("*") \
+        .eq("candidat_id", candidat_id) \
+        .eq("type", "versement") \
+        .order("date_transaction", desc=True) \
+        .execute()
+    return res.data
+
 # ---------- Authentification ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -234,7 +244,12 @@ def candidat_detail(candidat_id):
     if not candidat:
         flash("Candidat introuvable")
         return redirect(url_for("liste"))
-    return render_template("candidat_detail.html", c=candidat, admin=is_admin())
+    # Récupérer l'historique des versements
+    historique_versements = get_transactions_for_candidat(candidat_id)
+    return render_template("candidat_detail.html", 
+                           c=candidat, 
+                           admin=is_admin(),
+                           historique_versements=historique_versements)
 
 @app.route("/changer_phase/<candidat_id>", methods=["POST"])
 def changer_phase(candidat_id):

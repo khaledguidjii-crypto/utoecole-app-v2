@@ -20,7 +20,7 @@
     {% endif %}
 
     <!-- ========================================= -->
-    <!--   NOUVEAU : BOUTON AJOUTER UN VERSEMENT   -->
+    <!--   BOUTON AJOUTER UN VERSEMENT              -->
     <!-- ========================================= -->
     <div style="margin-top: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 16px; border: 1px solid #bbf7d0;">
         <h4 style="margin:0 0 0.5rem 0;"><i class="fas fa-hand-holding-usd"></i> Ajouter un versement</h4>
@@ -35,7 +35,40 @@
         <small style="color: #475569;">Ajoute un montant au versement total et enregistre la transaction dans la caisse.</small>
     </div>
 
-    <!-- Boutons d'actions existants -->
+    <!-- ========================================= -->
+    <!--   HISTORIQUE DES VERSEMENTS                -->
+    <!-- ========================================= -->
+    <div style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;">
+        <h4 style="margin:0 0 0.5rem 0;"><i class="fas fa-history"></i> Historique des versements</h4>
+        {% if historique_versements %}
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead style="background:#e2e8f0;">
+                        <tr>
+                            <th style="padding:0.5rem; text-align:left;">Date</th>
+                            <th style="padding:0.5rem; text-align:left;">Montant</th>
+                            <th style="padding:0.5rem; text-align:left;">Effectué par</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in historique_versements %}
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding:0.5rem;">{{ v.date_transaction[:19] }}</td>
+                            <td style="padding:0.5rem; color:#059669; font-weight:bold;">{{ v.montant }} DA</td>
+                            <td style="padding:0.5rem;">{{ v.created_by.split('@')[0] if v.created_by else 'systeme' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: #64748b; margin:0.5rem 0;">Aucun versement enregistré.</p>
+        {% endif %}
+    </div>
+
+    <!-- ========================================= -->
+    <!--   BOUTONS D'ACTIONS EXISTANTS              -->
+    <!-- ========================================= -->
     <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
         <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
         <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
