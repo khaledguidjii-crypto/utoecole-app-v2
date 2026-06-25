@@ -67,16 +67,25 @@
     </div>
 
     <!-- ========================================= -->
-    <!--   BOUTONS D'ACTIONS EXISTANTS              -->
+    <!--   BOUTONS D'ACTIONS AVEC RECUL            -->
     <!-- ========================================= -->
     <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
         <a href="/edit/{{ c.id }}" class="btn-detail" style="background:#3b82f6; color:white;"><i class="fas fa-edit"></i> Modifier</a>
         <a href="/delete/{{ c.id }}" class="btn-detail" style="background:#ef4444; color:white;" onclick="return confirm('Supprimer définitivement ?')"><i class="fas fa-trash"></i> Supprimer</a>
 
+        <!-- Bouton pour reculer d'une phase (uniquement si actif et phase != code) -->
+        {% if c.statut == 'actif' and c.phase != 'code' %}
+            <form method="post" action="/reculer_phase/{{ c.id }}" style="display:inline;">
+                <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;" onclick="return confirm('⚠️ Reculer {{ c.nom }} à la phase précédente ?')">
+                    <i class="fas fa-undo-alt"></i> Reculer d'une phase
+                </button>
+            </form>
+        {% endif %}
+
         {% if c.statut == 'actif' %}
             {% if c.phase != 'circuit' %}
                 <form method="post" action="/changer_phase/{{ c.id }}" style="display:inline;">
-                    <button type="submit" class="btn-detail" style="background:#f59e0b; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
+                    <button type="submit" class="btn-detail" style="background:#3b82f6; color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; cursor:pointer;">
                         <i class="fas fa-arrow-right"></i> Passer à la phase suivante
                     </button>
                 </form>

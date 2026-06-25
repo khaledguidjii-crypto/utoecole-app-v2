@@ -109,9 +109,7 @@ def get_candidats_stats():
         "admis": admis
     }
 
-# ---------- NOUVELLE FONCTION : récupérer les transactions d'un candidat ----------
 def get_transactions_for_candidat(candidat_id):
-    # On récupère toutes les transactions de type 'versement' liées à ce candidat
     res = supabase.table("transactions").select("*") \
         .eq("candidat_id", candidat_id) \
         .eq("type", "versement") \
@@ -244,7 +242,6 @@ def candidat_detail(candidat_id):
     if not candidat:
         flash("Candidat introuvable")
         return redirect(url_for("liste"))
-    # Récupérer l'historique des versements
     historique_versements = get_transactions_for_candidat(candidat_id)
     return render_template("candidat_detail.html", 
                            c=candidat, 
@@ -282,6 +279,41 @@ def changer_phase(candidat_id):
             flash(f"{candidat['nom']} passe à la phase {nouvelle_phase}.")
         else:
             flash(f"{candidat['nom']} est déjà en phase circuit. Cliquez sur 'Obtenir le permis' pour finaliser.")
+    else:
+        flash("Phase inconnue")
+    return redirect(url_for("candidat_detail", candidat_id=candidat_id))
+
+@app.route("/reculer_phase/<candidat_id>", methods=["POST"])
+def reculer_phase(candidat_id):
+    if not get_current_user():
+        flash("Veuillez vous connecter")
+        return redirect(url_for("login"))
+    
+    candidat = get_candidat_by_id(candidat_id)
+    if not candidat:
+        flash("Candidat introuvable")
+        return redirect(url_for("liste"))
+    
+    phase_actuelle = candidat["phase"]
+    phases = ["code", "creneau", "circuit"]
+    if phase_actuelle in phases:
+        index = phases.index(phase_actuelle)
+        if index > 0:
+            phase_precedente = phases[index - 1]
+            supabase.table("candidats").update({
+                "phase": phase_precedente,
+                "updated_by": get_current_user()["email"]
+            }).eq("id", candidat_id).execute()
+            
+            log_action("recul_phase", f"Candidat {candidat['nom']} recule de {phase_actuelle} à {phase_precedente}", candidat_id)
+            add_notification(
+                message=f"↩️ {candidat['nom']} a été ramené de {phase_actuelle} à {phase_precedente} par {get_current_user()['email'].split('@')[0]}",
+                type_notif="candidat",
+                lien=f"/candidat/{candidat_id}"
+            )
+            flash(f"{candidat['nom']} revient à la phase {phase_precedente}.")
+        else:
+            flash(f"{candidat['nom']} est déjà en phase code, impossible de reculer.")
     else:
         flash("Phase inconnue")
     return redirect(url_for("candidat_detail", candidat_id=candidat_id))
