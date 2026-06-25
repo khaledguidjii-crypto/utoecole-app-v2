@@ -45,7 +45,62 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
+
+    <!-- ========================================= -->
+    <!--   SCRIPT GLOBAL ANTI-DOUBLE-CLIC          -->
+    <!-- ========================================= -->
     <script>
+        // Fonction pour désactiver un bouton et afficher un spinner
+        function disableButton(btn) {
+            if (!btn.dataset.disabled) {
+                btn.dataset.disabled = 'true';
+                btn.disabled = true;
+                btn._originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> En cours...';
+                // Réactiver après 5 secondes au cas où la soumission échoue
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = btn._originalText;
+                    delete btn.dataset.disabled;
+                }, 5000);
+            }
+        }
+
+        // Protection sur tous les formulaires (soumission)
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const submitButtons = this.querySelectorAll('button[type="submit"], input[type="submit"]');
+                    submitButtons.forEach(btn => {
+                        disableButton(btn);
+                    });
+                });
+            });
+
+            // Protection sur les liens avec onclick (ex: suppression)
+            const links = document.querySelectorAll('a[onclick]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    // Désactiver le lien temporairement (en changeant le style et en empêchant le double clic)
+                    if (this.dataset.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    this.dataset.disabled = 'true';
+                    this.style.opacity = '0.5';
+                    this.style.pointerEvents = 'none';
+                    // Réactiver après 3 secondes
+                    setTimeout(() => {
+                        this.dataset.disabled = 'false';
+                        this.style.opacity = '1';
+                        this.style.pointerEvents = 'auto';
+                    }, 3000);
+                });
+            });
+        });
+
+        // Mise à jour des notifications (existant)
         function updateNotifCount() {
             fetch('/api/notifications/count')
                 .then(response => response.json())
